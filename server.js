@@ -1,7 +1,8 @@
 var sys = require('sys'),
     http = require('http'),
     colors = require('colors'),
-    httpProxy = require('http-proxy');
+    httpProxy = require('http-proxy'),
+url = require('url');
 
 var servers = [
     {server: {host:'localhost',port:8080}, ping: 0, health: 100},
@@ -56,3 +57,12 @@ var proxy = httpProxy.createServer(function (req, res, proxy) {
     //serverList.push(target);
 });
 proxy.listen(8001);
+
+var initServer = http.createServer(function (req, res) {
+    var query = url.parse(req.url, true).query;
+    console.log(query.port);
+    console.log(req.connection.remoteAddress);
+    res.end();
+});
+initServer.listen(8002);
+

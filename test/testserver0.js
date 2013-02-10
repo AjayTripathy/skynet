@@ -17,3 +17,9 @@ socket.on('connection', function (client) {
 	console.log('Got message from client: ' + msg);
     });
 });
+
+http.get({host: "localhost", port: 8002, path: "/?port=8080"}, function(res) {
+    //herp
+}).on('error', function(e) {
+    //shit done goofed, put server ping as infinite or something
+});
