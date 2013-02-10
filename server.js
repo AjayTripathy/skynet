@@ -7,6 +7,7 @@ var serverStats = {}
 startDate = Date.now();
 serverStats['localhost:8080'] = {ping: 0, lastContact: startDate, health:100};
 serverStats['localhost:8081'] = {ping: 0, lastContact: startDate, health:100};
+serverStats['localhost:8082'] = {ping: 0, lastContact: startDate, health:100};
 
 var getKey = function(server){
     var key = server.host + ":" + server.port;
@@ -43,7 +44,7 @@ function retLowestPing() {
         var serverStat = serverStats[key]
         if (serverStat.ping < lowestPing) {
 	       lowestPing = serverStat.ping;
-           console.log(key);
+               //console.log(key);
 	       lowestServer = getServerFromKey(key);
         }
     }
@@ -63,7 +64,7 @@ var proxy = httpProxy.createServer(function (req, res, proxy) {
     //var target = retLowestPing();
     var getBestServer = retLowestPing
     var target = getBestServer();
-    console.log(target);
+    //console.log(target);
     //console.log(req);
     proxy.proxyRequest(req, res, target);
     req.on('upgrade', function(req, socket, head) {
@@ -71,12 +72,32 @@ var proxy = httpProxy.createServer(function (req, res, proxy) {
     });
     //serverList.push(target);
 });
+proxy.proxy.on('start', function (req, res, target) {
+    //console.log(req.headers["x-forwarded-port"]);
+});
+proxy.proxy.on('end', function (req, res) {
+    //console.log("PROXYERROR");
+    var date = Date.now();
+    var successes = Object.keys(req.socket.server.proxy.proxies);
+    for (var i = 0; i < successes.length; i++) {
+	serverStats[successes[i]].lastSuccessTime = date;
+    }
+    console.log(req.socket.server.proxy.proxies);
+    //console.log(target);
+    //console.log("----------");
+});
+proxy.proxy.on('proxyWebSocketError', function (err, req, res) {
+    //console.log("PROXYWEBSOCKETERROR");
+    //console.log(err);
+    //console.log(req);
+    //console.log("-------------------");
+});
 proxy.listen(8001);
 
 var initServer = http.createServer(function (req, res) {
     var query = url.parse(req.url, true).query;
-    console.log(query.port);
-    console.log(req.connection.remoteAddress);
+    //console.log(query.port);
+    //console.log(req.connection.remoteAddress);
     res.end();
 });
 initServer.listen(8002);
