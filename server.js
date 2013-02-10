@@ -3,12 +3,6 @@ var sys = require('sys'),
     httpProxy = require('http-proxy'),
     url = require('url');
 
-var servers = [
-    {server: {host:'localhost',port:8080}, ping: 0, health: 100},
-    {server: {host:'localhost',port:8081}, ping: 0, health: 100}
-]
-
-
 var serverStats = {}
 startDate = Date.now();
 serverStats['localhost:8080'] = {ping: 0, lastContact: startDate, health:100};
@@ -25,11 +19,6 @@ var getServerFromKey = function(key){
     server['host'] = keyComponents[0];
     server['port'] = keyComponents[1];
     return server;
-}
-
-var serverList = [];
-for (var i = 0; i < servers.length; i++) {
-    serverList.push(servers[i].server);
 }
 
 function ping(server) {
