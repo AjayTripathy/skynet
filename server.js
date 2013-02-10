@@ -21,6 +21,8 @@ function ping(server) {
 		servers[i].ping = Date.now() - start;
 	    }
 	}
+    }).on('error', function(e) {
+	//shit done goofed, put server ping as infinite or something
     });
 }
 
