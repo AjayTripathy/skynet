@@ -1,6 +1,19 @@
 var http = require('http');
 
-http.createServer(function (req, res) {
-	console.log('request received');
+var io = require('socket.io');
+
+var server = http.createServer(function (req, res) {
+    console.log("request received");
+    res.writeHead(200, { 'Content-Type': 'text/html' });
+    res.write('<!doctype html><html><head><script src="/socket.io/socket.io.js"></script><script>var socket = io.connect("/");</script></head><body>THIS IS 2</body></html>');
     res.end();
-}).listen(8081);
+});
+server.listen(8081);
+
+var socket = io.listen(server);
+socket.on('connection', function (client) {
+    console.log('connection');
+    client.on('message', function (msg) {
+	console.log('Got message from client: ' + msg);
+    });
+});

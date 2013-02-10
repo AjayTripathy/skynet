@@ -1,22 +1,56 @@
-var http = require('http'),
-httpProxy = require('http-proxy');
+var sys = require('sys'),
+    http = require('http'),
+    colors = require('colors'),
+    httpProxy = require('http-proxy');
 
-var servers =  [{host :'localhost', port :8080}, {host : 'localhost',port :8081}];
+var servers = [
+    {server: {host:'localhost',port:8080}, ping: 0, health: 100},
+    {server: {host:'localhost',port:8081}, ping: 0, health: 100}
+]
 
-httpProxy.createServer(function (req, res, proxy) {
+var serverList = [];
+for (var i = 0; i < servers.length; i++) {
+    serverList.push(servers[i].server);
+}
 
-    var target = servers.shift();
-    console.log('!!!!!!!!!!!!!!!!!!!!!!!!!');
-    console.log(target)
-    console.log('~~~~~~~~~~~~~~~~~~~~~~~~~');
+function ping(server) {
+    var start = Date.now();
+    http.get(server, function(res) {
+	for (var i = 0; i < servers.length; i++) {
+	    if (servers[i].server == server) {
+		servers[i].ping = Date.now() - start;
+	    }
+	}
+    });
+}
+
+function retLowestPing() {
+    var lowestPing = Number.MAX_VALUE;
+    var lowestServer = null;
+    for (var i = 0; i < servers.length; i++) {
+	if (servers[i].ping < lowestPing) {
+	    lowestPing = servers[i].ping;
+	    lowestServer = servers[i].server;
+	}
+    }
+    return lowestServer;
+}
+
+var t = setInterval(function() {
+    for (var i = 0; i < servers.length; i++) {
+	ping(servers[i].server);
+    }
+}, 1000);
+
+var proxy = httpProxy.createServer(function (req, res, proxy) {
+    //var target = serverList.shift();
+    var target = retLowestPing();
+    //console.log(target);
+    //console.log(req);
     proxy.proxyRequest(req, res, target);
-    servers.push(target);
-    
-}).listen(8000);
-
-http.createServer(function (req, res) {
-    console.log("response received");
-    res.writeHead(200, { 'Content-Type': 'text/plain' });
-    res.write('request successfully proxied to: ' + req.url + '\n' + JSON.stringify(req.headers, true, 2));
-    res.end();
-}).listen(9000);
+    req.on('upgrade', function(req, socket, head) {
+	proxy.proxyWebSocketRequest(req, socket, head, target);
+    });
+    //serverList.push(target);
+});
+proxy.listen(8001);
